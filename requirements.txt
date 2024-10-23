@@ -1,1 +1,4 @@
 dash
+plotly
+numpy
+scipy

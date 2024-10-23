@@ -1,4 +1,0 @@
-pip install dash
-pip install plotly
-pip install numpy
-pip install scipy

@@ -1,6 +1,6 @@
-import dash
+import dash  # Python 的網頁框架
 from dash import dcc, html, Input, Output
-import plotly.graph_objs as go
+import plotly.graph_objs as go  # 圖表物件
 import numpy as np
 from scipy.stats import gamma, beta, binom, uniform, lognorm, f, norm
 
@@ -98,10 +98,10 @@ app.layout = html.Div(
                 dcc.Slider(
                     id="sample-size",
                     min=1,
-                    max=200,
+                    max=1000,  # Changed max value from 200 to 1000
                     step=1,
                     value=30,
-                    marks={i: str(i) for i in range(1, 201, 20)},
+                    marks={i: str(i) for i in range(1, 1001, 100)},
                     tooltip={"placement": "bottom", "always_visible": True},
                 ),
             ],
@@ -152,7 +152,7 @@ app.layout = html.Div(
     ],
     [Input("dist-type", "value")],
 )
-def update_labels_and_input(dist_type):
+def update_labels_and_input(dist_type):  # 根據不同分配更改變數名
     if dist_type == "Lognormal":
         return "μ:", "σ²:", 1, 150, 1
     elif dist_type == "F":
@@ -182,12 +182,13 @@ def update_plots(dist_type, param1, param2, sample_size, num_means):
     try:
         x = np.linspace(0, 10, 500)
 
-        # 母體分佈圖
         if dist_type == "Uniform":
-            y = uniform.pdf(x, loc=param1, scale=param2 - param1)
+            y = uniform.pdf(
+                x, loc=param1, scale=param2 - param1
+            )  # 機率密度函數（PDF）描述了連續型隨機變數在某一點附近的機率密度
         elif dist_type == "Binomial":
             x = np.arange(0, param1 + 1)
-            y = binom.pmf(x, param1, param2)
+            y = binom.pmf(x, param1, param2)  # pmf 描述離散型隨機變數的機率分佈
         elif dist_type == "Gamma":
             y = gamma.pdf(x, param1, scale=1 / param2)
         elif dist_type == "Beta":
@@ -201,7 +202,6 @@ def update_plots(dist_type, param1, param2, sample_size, num_means):
         dist_fig = go.Figure(data=[go.Scatter(x=x, y=y, mode="lines")])
         dist_fig.update_layout(title="母體分佈", xaxis_title="X", yaxis_title="Density")
 
-        # 計算樣本平均數
         means = []
         for _ in range(num_means):
             if dist_type == "Uniform":
@@ -209,7 +209,7 @@ def update_plots(dist_type, param1, param2, sample_size, num_means):
                     loc=param1, scale=param2 - param1, size=sample_size
                 )
             elif dist_type == "Binomial":
-                sample = binom.rvs(param1, param2, size=sample_size)
+                sample = binom.rvs(param1, param2, size=sample_size)  # rvs 生成隨機樣本
             elif dist_type == "Gamma":
                 sample = gamma.rvs(param1, scale=1 / param2, size=sample_size)
             elif dist_type == "Beta":
@@ -220,8 +220,7 @@ def update_plots(dist_type, param1, param2, sample_size, num_means):
                 sample = lognorm.rvs(s=param2, scale=np.exp(param1), size=sample_size)
             means.append(np.mean(sample))
 
-        # 繪製直方圖並添加密度函數曲線
-        hist, bin_edges = np.histogram(means, bins=30, density=True)
+        hist, bin_edges = np.histogram(means, bins=100, density=True)
         bin_centers = 0.5 * (bin_edges[1:] + bin_edges[:-1])
 
         mean_fig = go.Figure()
@@ -231,7 +230,6 @@ def update_plots(dist_type, param1, param2, sample_size, num_means):
             go.Scatter(x=bin_centers, y=hist, mode="lines", name="密度函數")
         )
 
-        # 添加常態曲線
         mean_mu, mean_sigma = np.mean(means), np.std(means)
         x = np.linspace(mean_mu - 4 * mean_sigma, mean_mu + 4 * mean_sigma, 100)
         y = norm.pdf(x, mean_mu, mean_sigma)
@@ -249,9 +247,6 @@ def update_plots(dist_type, param1, param2, sample_size, num_means):
         mean_fig.update_layout(
             title="樣本平均數的抽樣分配", xaxis_title="Mean", yaxis_title="Density"
         )
-
-        stats = f"樣本平均數: {mean_mu:.2f}, 標準差: {mean_sigma:.2f}"
-        return dist_fig, mean_fig, stats
 
     except Exception as e:
         return go.Figure(), go.Figure(), f"Error: {str(e)}"
